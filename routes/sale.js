@@ -1,45 +1,44 @@
 const express = require("express");
 const router = express.Router();
-const Sale = require("../models/sale");
-const Listing = require("../models/listing");
+const Sale = require("../models/sale.js");
+const Listing = require("../models/listing.js");
 
 const isLoggedIn = (req, res, next) => {
-    if (!req.isAuthenticated || !req.isAuthenticated() || !req.user) {
-        req.flash("error", "You must be logged in to access admin panel!");
+    if (!req.isAuthenticated()) {
+        req.flash("error", "You must be logged in first!");
         return res.redirect("/login");
     }
     next();
 };
 
-// Render Sale Form (Secure Admin Only)
-router.get("/sale/new", isLoggedIn, async (req, res) => {
+// Render Sale Form
+router.get("/new", isLoggedIn, async (req, res) => {
     try {
-        let allListings;
+        let listings;
         const isAdmin = req.user.role === "admin" || req.user.isAdmin === true;
-
         if (isAdmin) {
-            allListings = await Listing.find({});
+            listings = await Listing.find({});
         } else {
-            allListings = await Listing.find({ owner: req.user._id });
+            listings = await Listing.find({ owner: req.user._id });
         }
-        
-        res.render("admin/new-sale.ejs", { allListings });
+        res.render("admin/new-sale.ejs", { listings });
     } catch (err) {
         console.error(err);
-        req.flash("error", "Something went wrong.");
+        req.flash("error", "Something went wrong!");
         res.redirect("/listings");
     }
 });
 
-// Handle Sale Creation & Security Checks
-router.post("/sale", isLoggedIn, async (req, res) => {
+// Handle Sale Creation & Permission Check
+router.post("/", isLoggedIn, async (req, res) => {
     try {
         const { listingId, discountType, discountValue, saleStartDateTime, saleDurationHours } = req.body;
         const isAdmin = req.user.role === "admin" || req.user.isAdmin === true;
 
+        // Agar user "all" select kare lekin woh admin nahi hai, toh turant block karo
         if (listingId === "all" && !isAdmin) {
             req.flash("error", "Only Admin can apply sale to all listings!");
-            return res.redirect("/admin/sale/new");
+            return res.redirect("/listings");
         }
 
         if (listingId && listingId !== "all") {
@@ -49,6 +48,7 @@ router.post("/sale", isLoggedIn, async (req, res) => {
                 return res.redirect("/listings");
             }
 
+            // Safe ID comparison (handling Mongoose ObjectId vs String mismatch)
             const listingOwnerId = listing.owner ? listing.owner.toString() : "";
             const currentUserId = req.user._id ? req.user._id.toString() : "";
             const isOwner = listingOwnerId === currentUserId;
@@ -89,11 +89,11 @@ router.post("/sale", isLoggedIn, async (req, res) => {
             }
         }
 
-        req.flash("success", "Sale successfully applied! 🎉");
+        req.flash("success", "Sale successfully applied!");
         res.redirect("/listings");
     } catch (err) {
-        console.error(err);
-        req.flash("error", err.message || "Failed to apply sale.");
+        console.error("Sale Error:", err);
+        req.flash("error", "Failed to apply sale.");
         res.redirect("/listings");
     }
 });

@@ -21,6 +21,7 @@ const reviewRouter = require("./routes/review.js");
 const userRouter = require("./routes/user.js");
 const cartRouter = require("./routes/cart.js");
 const adminRouter = require("./routes/admin.js");
+const saleRouter = require("./routes/sale.js");
 
 
 // AI Router Import from routes folder
@@ -118,6 +119,7 @@ app.use("/cart", cartRouter);
 app.use("/", userRouter);
 app.use("/payment", paymentRouter);
 app.use("/admin", adminRouter); 
+app.use("/sales", saleRouter);
 
 // AI Modularized Route Prefix
 app.use("/", aiRouter);

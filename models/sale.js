@@ -6,7 +6,7 @@ const saleSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "Listing",
         required: true,
-        unique: true // Ek listing par ek hi active sale config rahegi
+        unique: true
     },
     discountType: {
         type: String,
